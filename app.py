@@ -11,6 +11,7 @@ from langchain.schema.runnable import RunnablePassthrough, RunnableLambda
 from langchain.chat_models import ChatOpenAI
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.memory import ConversationBufferMemory
+import os
 
 repo_url = "https://github.com/trinity31/rag-pipeline-challenge"
 
@@ -37,7 +38,10 @@ with st.sidebar:
 @st.cache_data(show_spinner="Embedding file...")
 def embed_file(file, api_key):
     file_content = file.read()
-    file_path = f"./.cache/files/{file.name}"
+    file_dir = f"./.cache/files"  # 파일을 저장할 디렉토리 경로
+    if not os.path.exists(file_dir):  # 디렉토리가 존재하지 않으면
+        os.makedirs(file_dir)  # 디렉토리 생성
+    file_path = os.path.join(file_dir, file.name)
     with open(file_path, "wb") as f:
         f.write(file_content)
     cache_dir = LocalFileStore(f"./.cache/embeddings/{file.name}")
