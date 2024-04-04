@@ -1,6 +1,6 @@
 streamlit
-openai
+openai==0.28.0
 tiktoken
-langchain
-unstructured
+langchain==0.0.332
+unstructured==0.10.16
 faiss-cpu
