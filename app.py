@@ -17,9 +17,18 @@ st.set_page_config(
     page_icon="🤖",
 )
 
+api_key = ""
+
+with st.sidebar:
+    api_key = st.text_input("OpenAI API key", type="password")
+
+    file = st.file_uploader(
+        "Upload a txt, pdf or docx file", type=["pdf", "txt", "docx"]
+    )
+
 
 @st.cache_data(show_spinner="Embedding file...")
-def embed_file(file):
+def embed_file(file, api_key):
     file_content = file.read()
     file_path = f"./.cache/files/{file.name}"
     with open(file_path, "wb") as f:
@@ -32,7 +41,9 @@ def embed_file(file):
     )
     loader = UnstructuredFileLoader(file_path)
     docs = loader.load_and_split(text_splitter=splitter)
-    embeddings = OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings(
+        api_key=api_key,
+    )
     cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
     vectorstore = FAISS.from_documents(docs, cached_embeddings)
     retriever = vectorstore.as_retriever()
@@ -51,8 +62,11 @@ def send_message(message, role, save=True):
 
 
 def paint_history():
-    for message in st.session_state["messages"]:
-        send_message(message["message"], message["role"], save=False)
+    if "messages" not in st.session_state:
+        st.session_state["messages"] = []
+    else:
+        for message in st.session_state["messages"]:
+            send_message(message["message"], message["role"], save=False)
 
 
 def format_docs(docs):
@@ -92,13 +106,18 @@ class ChatCallbackHandler(BaseCallbackHandler):
         self.message_box.markdown(self.message)
 
 
-llm = ChatOpenAI(
-    temperature=0.1,
-    streaming=True,
-    callbacks=[
-        ChatCallbackHandler(),
-    ],
-)
+if api_key == "":
+    st.error("Please enter your OpenAI API key")
+    st.stop()
+else:
+    llm = ChatOpenAI(
+        temperature=0.1,
+        streaming=True,
+        callbacks=[
+            ChatCallbackHandler(),
+        ],
+        api_key=api_key,
+    )
 
 prompt = ChatPromptTemplate.from_messages(
     [
@@ -127,13 +146,12 @@ Upoad your file in sidebar.
 """
 )
 
-with st.sidebar:
-    file = st.file_uploader(
-        "Upload a txt, pdf or docx file", type=["pdf", "txt", "docx"]
-    )
 
 if file:
-    retriever = embed_file(file)
+    if api_key == "":
+        st.error("Please enter your OpenAI API key")
+        st.stop()
+    retriever = embed_file(file, api_key)
     send_message("I'm ready! Ask away!", "ai", save=False)
     paint_history()
     message = st.chat_input("Ask anything about your file...")
