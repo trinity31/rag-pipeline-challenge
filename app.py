@@ -12,6 +12,8 @@ from langchain.chat_models import ChatOpenAI
 from langchain.callbacks.base import BaseCallbackHandler
 from langchain.memory import ConversationBufferMemory
 
+repo_url = "https://github.com/trinity31/rag-pipeline-challenge"
+
 st.set_page_config(
     page_title="Document GPT",
     page_icon="🤖",
@@ -24,6 +26,11 @@ with st.sidebar:
 
     file = st.file_uploader(
         "Upload a txt, pdf or docx file", type=["pdf", "txt", "docx"]
+    )
+
+    st.markdown(
+        f'<a href="{repo_url}" target="_blank">GitHub Repository</a>',
+        unsafe_allow_html=True,
     )
 
 
