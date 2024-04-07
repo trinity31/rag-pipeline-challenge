@@ -4,3 +4,4 @@ tiktoken
 langchain==0.0.332
 unstructured==0.10.16
 faiss-cpu
+wikipedia
