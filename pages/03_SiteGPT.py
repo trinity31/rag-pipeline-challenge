@@ -163,7 +163,6 @@ def load_website(url):
     )
     loader.requests_per_second = 5
     docs = loader.load_and_split(text_splitter=splitter)
-    st.write(docs)
     vector_store = FAISS.from_documents(
         docs,
         OpenAIEmbeddings(
