@@ -63,23 +63,23 @@ def save_to_file(inputs):
 
 
 functions = [
-    {
-        "type": "function",
-        "function": {
-            "name": "duckduckgo_search",
-            "description": "Searches DuckDuckGo for the given query",
-            "parameters": {
-                "type": "object",
-                "properties": {
-                    "query": {
-                        "type": "string",
-                        "description": "The query to search for",
-                    }
-                },
-                "required": ["query"],
-            },
-        },
-    },
+    # {
+    #     "type": "function",
+    #     "function": {
+    #         "name": "duckduckgo_search",
+    #         "description": "Searches DuckDuckGo for the given query",
+    #         "parameters": {
+    #             "type": "object",
+    #             "properties": {
+    #                 "query": {
+    #                     "type": "string",
+    #                     "description": "The query to search for",
+    #                 }
+    #             },
+    #             "required": ["query"],
+    #         },
+    #     },
+    # },
     {
         "type": "function",
         "function": {
@@ -134,7 +134,7 @@ functions = [
 ]
 
 functions_map = {
-    "duckduckgo_search": duckduckgo_search,
+    # "duckduckgo_search": duckduckgo_search,
     "wikipedia_search": wikipedia_search,
     "website_scrape": website_scrape,
     "save_to_file": save_to_file,
