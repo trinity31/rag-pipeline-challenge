@@ -220,7 +220,7 @@ else:
             order="desc",
             limit="10",
         )
-        print(my_assistants)
+
         # Find the assistant named "Research AI Assistant"
         for assistant in my_assistants.data:
             if assistant.name == "Research AI Assistant":
@@ -301,9 +301,6 @@ else:
             send_message(thread_id, input)
 
         st.write("Sending message...")
-
-        print(f"THread ID: {thread_id}")
-        print(f"Assistant ID: {assistant_id}")
 
         run = client.beta.threads.runs.create(
             thread_id=thread_id,
