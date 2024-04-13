@@ -1,12 +1,6 @@
 import streamlit as st
-from langchain.retrievers import WikipediaRetriever
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.document_loaders import UnstructuredFileLoader
 from langchain.chat_models import ChatOpenAI
 from langchain.prompts import ChatPromptTemplate
-from langchain.callbacks import StreamingStdOutCallbackHandler
-from langchain.schema import BaseOutputParser
-import json
 from langchain.document_loaders import SitemapLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores.faiss import FAISS
