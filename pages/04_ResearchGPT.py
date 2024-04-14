@@ -3,10 +3,8 @@ from openai import OpenAI
 import json
 import requests
 from bs4 import BeautifulSoup
-from langchain.utilities import DuckDuckGoSearchAPIWrapper
 from langchain.retrievers import WikipediaRetriever
 import time
-import os
 import httpx
 
 
@@ -14,13 +12,7 @@ def format_docs(docs):
     return "\n\n".join(document.page_content for document in docs)
 
 
-# def duckduckgo_search(inputs):
-#     ddg = DuckDuckGoSearchAPIWrapper()
-#     query = inputs["query"]
-#     result = ddg.run(query)
-#     return result
 def duckduckgo_search(inputs):
-    # DuckDuckGo의 API 또는 결과 페이지를 스크레이핑하기 위한 URL 설정
     query = inputs["query"]
     api_key = st.secrets["SERPAPI_KEY"]
     url = f"https://serpapi.com/search?engine=duckduckgo&q={query}&api_key={api_key}"
@@ -29,12 +21,7 @@ def duckduckgo_search(inputs):
     with httpx.Client() as client:
         response = client.get(url)
 
-    # 검색 결과 처리
-    # 이 부분은 실제 필요에 따라 HTML 파싱 또는 API 응답 구조에 맞게 조정해야 합니다.
-    # print(response.status_code)
     if response.status_code == 200:
-        # 예시에서는 응답의 HTML 텍스트를 반환하고 있습니다.
-        # print(response.text)
         return response.text
     else:
         return "Search failed with status: " + str(response.status_code)
@@ -151,7 +138,7 @@ def get_tool_outputs(run_id, thread_id):
     outputs = []
     for action in run.required_action.submit_tool_outputs.tool_calls:
         function = action.function
-        print(f"Calling function: {function.name} with arg {function.arguments}")
+        st.write(f"Calling function: {function.name} with arg {function.arguments}")
         outputs.append(
             {
                 "output": functions_map[function.name](json.loads(function.arguments)),
@@ -175,7 +162,8 @@ def get_messages(thread_id):
     messages = list(messages)
     messages.reverse()
     for message in messages:
-        st.write(f"{message.role}: {message.content[0].text.value}")
+        with st.chat_message(message.role):
+            st.markdown(message.content[0].text.value)
 
 
 def send_message(thread_id, content):
@@ -184,23 +172,9 @@ def send_message(thread_id, content):
     )
 
 
-def save_chat_message(message, role):
-    st.session_state["messages"].append({"message": message, "role": role})
-
-
-def send_chat_message(message, role, save=True):
+def send_chat_message(message, role):
     with st.chat_message(role):
         st.markdown(message)
-    if save:
-        save_chat_message(message, role)
-
-
-def paint_chat_history():
-    if "messages" not in st.session_state:
-        st.session_state["messages"] = []
-    else:
-        for message in st.session_state["messages"]:
-            send_chat_message(message["message"], message["role"], save=False)
 
 
 repo_url = "https://github.com/trinity31/rag-pipeline-challenge"
@@ -210,6 +184,9 @@ assistant_id = st.session_state.get("assistant_id", "")
 assistant_name = st.session_state.get("assistant_name", "")
 thread_id = st.session_state.get("thread_id", "")
 run_id = st.session_state.get("run_id", "")
+
+if "button_clicked" not in st.session_state:
+    st.session_state.button_clicked = False
 
 st.set_page_config(
     page_title="Research GPT",
@@ -280,47 +257,66 @@ else:
     st.title(assistant_name)
     st.markdown(
         """
-            Welcome!
+            Welcome! I'm your Research AI Assistant.
             \n
-            I'm your Research AI Assistant.
+            I can help you with your research.
+            \n
+            Please enter your query below to get started.
             \n
         """
     )
 
+    keyword = st.session_state["keyword"] if "keyword" in st.session_state else ""
+
     if run_id != "":
         run = get_run(run_id, thread_id)
         if run.status == "completed":
-            st.write("Research completed!")
+            st.success("Research completed!")
             get_messages(thread_id)
+            with open("search_result.txt", "rb") as file:
+                btn = st.download_button(
+                    label="Download result",
+                    data=file,
+                    file_name=f"search_{keyword}.txt",
+                    mime="text/plain",
+                    on_click=lambda: setattr(st.session_state, "button_clicked", True),
+                )
         elif run.status == "in_progress":
-            st.write("In progress...")
-            # get_messages(thread_id)
-            time.sleep(3)
-            st.rerun()
+            with st.status("In progress..."):
+                st.write("Waiting for the AI to respond...")
+                time.sleep(3)
+                st.rerun()
         elif run.status == "requires_action":
-            st.write("Processing action...")
-            submit_tool_outputs(run_id, thread_id)
-            time.sleep(5)
-            st.rerun()
+            with st.status("Processing action..."):
+                submit_tool_outputs(run_id, thread_id)
+                time.sleep(5)
+                st.rerun()
 
-    input = st.text_input(
+    if "reset_input" in st.session_state and st.session_state["reset_input"]:
+        st.session_state["input"] = ""
+        st.session_state["reset_input"] = False
+
+    input_value = st.text_input(
         "What do you want to research about? ",
+        value=st.session_state.get("input", ""),
+        key="input",
         placeholder="e.g) I want to research about Artificial Intelligence",
     )
-    if input:
+
+    if input_value:
         if thread_id == "":
             thread = client.beta.threads.create(
                 messages=[
                     {
                         "role": "user",
-                        "content": input,
+                        "content": input_value,
                     }
                 ]
             )
             thread_id = thread.id
             st.session_state["thread_id"] = thread_id
         else:
-            send_message(thread_id, input)
+            send_message(thread_id, input_value)
 
         st.write("Sending message...")
 
@@ -331,5 +327,7 @@ else:
 
         run_id = run.id
         st.session_state["run_id"] = run_id
+        st.session_state["reset_input"] = True
+        st.session_state["keyword"] = input_value
 
         st.rerun()
