@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 from langchain.utilities import DuckDuckGoSearchAPIWrapper
 from langchain.retrievers import WikipediaRetriever
 import time
-import asyncio
+import os
 import httpx
 
 
@@ -22,7 +22,8 @@ def format_docs(docs):
 def duckduckgo_search(inputs):
     # DuckDuckGo의 API 또는 결과 페이지를 스크레이핑하기 위한 URL 설정
     query = inputs["query"]
-    url = f"https://html.duckduckgo.com/html/?q={query}"
+    api_key = st.secrets["SERPAPI_KEY"]
+    url = f"https://serpapi.com/search?engine=duckduckgo&q={query}&api_key={api_key}"
 
     # httpx.Client를 사용하여 동기적으로 HTTP 요청 수행
     with httpx.Client() as client:
@@ -30,10 +31,10 @@ def duckduckgo_search(inputs):
 
     # 검색 결과 처리
     # 이 부분은 실제 필요에 따라 HTML 파싱 또는 API 응답 구조에 맞게 조정해야 합니다.
-    print(response.status_code)
+    # print(response.status_code)
     if response.status_code == 200:
         # 예시에서는 응답의 HTML 텍스트를 반환하고 있습니다.
-        print(response.text)
+        # print(response.text)
         return response.text
     else:
         return "Search failed with status: " + str(response.status_code)
@@ -63,23 +64,23 @@ def save_to_file(inputs):
 
 
 functions = [
-    # {
-    #     "type": "function",
-    #     "function": {
-    #         "name": "duckduckgo_search",
-    #         "description": "Searches DuckDuckGo for the given query",
-    #         "parameters": {
-    #             "type": "object",
-    #             "properties": {
-    #                 "query": {
-    #                     "type": "string",
-    #                     "description": "The query to search for",
-    #                 }
-    #             },
-    #             "required": ["query"],
-    #         },
-    #     },
-    # },
+    {
+        "type": "function",
+        "function": {
+            "name": "duckduckgo_search",
+            "description": "Searches DuckDuckGo for the given query",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The query to search for",
+                    }
+                },
+                "required": ["query"],
+            },
+        },
+    },
     {
         "type": "function",
         "function": {
@@ -134,7 +135,7 @@ functions = [
 ]
 
 functions_map = {
-    # "duckduckgo_search": duckduckgo_search,
+    "duckduckgo_search": duckduckgo_search,
     "wikipedia_search": wikipedia_search,
     "website_scrape": website_scrape,
     "save_to_file": save_to_file,
