@@ -318,7 +318,7 @@ else:
         else:
             send_message(thread_id, input_value)
 
-        st.write("Sending message...")
+        # st.write("Sending message...")
 
         run = client.beta.threads.runs.create(
             thread_id=thread_id,
