@@ -201,12 +201,12 @@ def wiki_search(term):
 ##########################
 
 with st.sidebar:
-    docs = None
+    docs = []
     topic = None
     choice = st.selectbox(
         "Choose what you want to use.",
         (
-            "File",
+            "Files",
             "Wikipedia Article",
         ),
     )
@@ -218,15 +218,18 @@ with st.sidebar:
         ),
     )
 
-    if choice == "File":
-        file = st.file_uploader(
-            "Upload a .docx, .txt or .pdf file", type=["docx", "txt", "pdf"]
+    if choice == "Files":
+        files = st.file_uploader(
+            "Upload a .docx, .txt or .pdf file",
+            type=["docx", "txt", "pdf"],
+            accept_multiple_files=True,
         )
-        if file:
+        if files:
             if api_key == "":
                 st.error("Please enter your OpenAI API key")
                 st.stop()
-            docs = split_file(file)
+            for file in files:
+                docs.extend(split_file(file))
     else:
         topic = st.text_input("Search Wikipedia...")
         if topic:

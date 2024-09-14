@@ -37,8 +37,10 @@ with st.sidebar:
     else:
         st.caption("❌ API key is not set.")
 
-    file = st.file_uploader(
-        "Upload a txt, pdf or docx file", type=["pdf", "txt", "docx"]
+    files = st.file_uploader(
+        "Upload a txt, pdf or docx file",
+        type=["pdf", "txt", "docx"],
+        accept_multiple_files=True,
     )
 
     st.markdown(
@@ -48,29 +50,57 @@ with st.sidebar:
 
 
 @st.cache_resource(show_spinner="Embedding file...")
-def embed_file(file, api_key):
-    file_content = file.read()
-    file_dir = f"./.cache/files"  # 파일을 저장할 디렉토리 경로
-    if not os.path.exists(file_dir):  # 디렉토리가 존재하지 않으면
-        os.makedirs(file_dir)  # 디렉토리 생성
-    file_path = os.path.join(file_dir, file.name)
-    with open(file_path, "wb") as f:
-        f.write(file_content)
-    cache_dir = LocalFileStore(f"./.cache/embeddings/{file.name}")
-    splitter = CharacterTextSplitter.from_tiktoken_encoder(
-        separator="\n",
-        chunk_size=600,
-        chunk_overlap=100,
-    )
-    loader = UnstructuredFileLoader(file_path)
-    docs = loader.load_and_split(text_splitter=splitter)
-    embeddings = OpenAIEmbeddings(
-        api_key=api_key,
-    )
-    cached_embeddings = CacheBackedEmbeddings.from_bytes_store(embeddings, cache_dir)
-    vectorstore = FAISS.from_documents(docs, cached_embeddings)
-    retriever = vectorstore.as_retriever()
-    return retriever
+def embed_files(files, api_key):
+    all_docs = []
+    vectorstores = []
+
+    for file in files:
+        try:
+            file_content = file.read()
+            file_dir = f"./.cache/files"  # 파일을 저장할 디렉토리 경로
+            if not os.path.exists(file_dir):  # 디렉토리가 존재하지 않으면
+                os.makedirs(file_dir)  # 디렉토리 생성
+            file_path = os.path.join(file_dir, file.name)
+            print(file_path)
+            with open(file_path, "wb") as f:
+                f.write(file_content)
+
+            cache_dir = LocalFileStore(f"./.cache/embeddings/{file.name}")
+            splitter = CharacterTextSplitter.from_tiktoken_encoder(
+                separator="\n",
+                chunk_size=600,
+                chunk_overlap=100,
+            )
+            loader = UnstructuredFileLoader(file_path)
+            docs = loader.load_and_split(text_splitter=splitter)
+            all_docs.extend(docs)  # 모든 문서를 결합
+
+            # 각 파일에 대해 별도의 임베딩을 생성하고 저장
+            embeddings = OpenAIEmbeddings(
+                api_key=api_key,
+            )
+            cached_embeddings = CacheBackedEmbeddings.from_bytes_store(
+                embeddings, cache_dir
+            )
+            vectorstore = FAISS.from_documents(docs, cached_embeddings)
+            vectorstores.append(vectorstore)  # 각 파일의 벡터스토어를 리스트에 추가
+        except Exception as e:
+            print(f"Error processing file {file.name}: {e}")
+
+    try:
+        # 여러 벡터스토어를 하나로 합침
+        if vectorstores:
+            combined_vectorstore = vectorstores[0]
+            for vs in vectorstores[1:]:
+                combined_vectorstore.merge_from(vs)  # FAISS에서 지원하는 병합 함수 사용
+            retriever = combined_vectorstore.as_retriever()
+            return retriever
+        else:
+            print("No documents processed.")
+            return None
+    except Exception as e:
+        print(f"Error during embedding or retrieval: {e}")
+        return None
 
 
 def save_message(message, role):
@@ -170,11 +200,11 @@ Upoad your file in sidebar.
 )
 
 
-if file:
+if files:
     if api_key == "":
         st.error("Please enter your OpenAI API key")
         st.stop()
-    retriever = embed_file(file, api_key)
+    retriever = embed_files(files, api_key)
     send_message("I'm ready! Ask away!", "ai", save=False)
     paint_history()
     message = st.chat_input("Ask anything about your file...")
