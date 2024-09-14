@@ -7,9 +7,12 @@ from langchain.prompts import ChatPromptTemplate
 from langchain.callbacks import StreamingStdOutCallbackHandler
 from langchain.schema import BaseOutputParser
 import json
+import os
 
 repo_url = "https://github.com/trinity31/rag-pipeline-challenge"
 api_key = st.session_state.get("api_key", "")
+
+os.environ["MAGIC"] = "/opt/homebrew/opt/libmagic"
 
 st.set_page_config(
     page_title="Quiz GPT",
@@ -19,7 +22,9 @@ st.set_page_config(
 st.title("Quiz GPT")
 
 with st.sidebar:
-    api_key = st.text_input("OpenAI API key", type="password")
+    # api_key = st.text_input("OpenAI API key", type="password")
+    api_key = os.getenv("OPENAI_API_KEY")
+    print(api_key)
     st.session_state["api_key"] = api_key
     if api_key:
         st.caption("✔️ API key is set.")
@@ -87,7 +92,7 @@ if api_key == "":
 else:
     llm = ChatOpenAI(
         temperature=0.1,
-        model="gpt-3.5-turbo-0125",
+        model="gpt-4o-mini",
         streaming=True,
         callbacks=[
             StreamingStdOutCallbackHandler(),
@@ -120,21 +125,21 @@ questions_prompt = ChatPromptTemplate.from_messages(
     
     Each question should have 4 answers, three of them must be incorrect and one should be correct.
          
-    Use (o) to signal the correct answer.
+    Quesions and answers should be written in Korean language.
          
     Question examples:
          
     Question: What is the color of the ocean?
-    Answers: Red|Yellow|Green|Blue(o)
+    Answers: Red|Yellow|Green|Blue
          
     Question: What is the capital or Georgia?
-    Answers: Baku|Tbilisi(o)|Manila|Beirut
+    Answers: Baku|Tbilisi|Manila|Beirut
          
     Question: When was Avatar released?
-    Answers: 2007|2001|2009(o)|1998
+    Answers: 2007|2001|2009|1998
          
     Question: Who was Julius Caesar?
-    Answers: A Roman Emperor(o)|Painter|Actor|Model
+    Answers: A Roman Emperor|Painter|Actor|Model
          
     Your turn!
          

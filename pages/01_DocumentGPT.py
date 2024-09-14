@@ -13,8 +13,14 @@ from langchain.callbacks.base import BaseCallbackHandler
 from langchain.memory import ConversationBufferMemory
 import os
 
+# from dotenv import load_dotenv
+
+# load_dotenv()
+
 repo_url = "https://github.com/trinity31/rag-pipeline-challenge"
 api_key = st.session_state.get("api_key", "")
+
+os.environ["MAGIC"] = "/opt/homebrew/opt/libmagic"
 
 st.set_page_config(
     page_title="Document GPT",
@@ -22,7 +28,9 @@ st.set_page_config(
 )
 
 with st.sidebar:
-    api_key = st.text_input("OpenAI API key", type="password")
+    # api_key = st.text_input("OpenAI API key", type="password")
+    api_key = os.getenv("OPENAI_API_KEY")
+    print(api_key)
     st.session_state["api_key"] = api_key
     if api_key:
         st.caption("✔️ API key is set.")
@@ -39,7 +47,7 @@ with st.sidebar:
     )
 
 
-@st.cache_data(show_spinner="Embedding file...")
+@st.cache_resource(show_spinner="Embedding file...")
 def embed_file(file, api_key):
     file_content = file.read()
     file_dir = f"./.cache/files"  # 파일을 저장할 디렉토리 경로
@@ -131,7 +139,7 @@ else:
         callbacks=[
             ChatCallbackHandler(),
         ],
-        api_key=api_key,
+        #  api_key=api_key,
     )
 
 prompt = ChatPromptTemplate.from_messages(

@@ -4,3 +4,4 @@ files/
 .streamlit/
 .cache/
 *.txt
+*.pdf

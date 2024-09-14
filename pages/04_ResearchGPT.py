@@ -244,7 +244,7 @@ else:
                         3. Extract the content of a website if any url is included in the search result.
                         4. Save all the search results in a text file, and it should contain all the information you have found in step 1, 2, and 3.
                         """,
-                model="gpt-4-turbo-preview",
+                model="gpt-4o-mini",
                 tools=functions,
             )
             st.session_state["assistant_id"] = assistant.id

@@ -8,12 +8,12 @@ from langchain.embeddings import OpenAIEmbeddings
 from langchain.schema.runnable import RunnablePassthrough, RunnableLambda
 
 repo_url = "https://github.com/trinity31/rag-pipeline-challenge"
-site_url = "https://developers.cloudflare.com/sitemap.xml"
+site_url = "https://python.langchain.com/sitemap.xml"
 
 api_key = st.session_state.get("api_key", "")
 
 st.set_page_config(
-    page_title="Cloudflare GPT",
+    page_title="Langchain GPT",
     page_icon="❓",
 )
 
@@ -36,7 +36,7 @@ if api_key == "":
 else:
     llm = ChatOpenAI(
         temperature=0.1,
-        model="gpt-3.5-turbo-0125",
+        model="gpt-4o-mini",
         api_key=api_key,
     )
 
@@ -148,11 +148,11 @@ def load_website(url):
 
     loader = SitemapLoader(
         url,
-        filter_urls=[
-            r"^(.*\/ai-gateway\/).*",
-            r"^(.*\/vectorize\/).*",
-            r"^(.*\/workers-ai\/).*",
-        ],
+        # filter_urls=[
+        #     r"^(.*\/ai-gateway\/).*",
+        #     r"^(.*\/vectorize\/).*",
+        #     r"^(.*\/workers-ai\/).*",
+        # ],
         parsing_function=parse_page,
     )
     loader.requests_per_second = 5
@@ -168,15 +168,11 @@ def load_website(url):
 
 st.markdown(
     """
-    # Cloudflare Site GPT
+    # Langchain Site GPT
             
-    Ask questions about the following content of a Cloudflare Developers Website 
+    Ask questions about the following content of a Langchain Developers Website 
 
-    AI Gateway
-    Cloudflare Vectorize
-    Workers AI
-
-    https://developers.cloudflare.com.
+    https://python.langchain.com
             
 """
 )
@@ -190,9 +186,7 @@ if site_url:
             st.error("Please enter your OpenAI API key")
     else:
         retriever = load_website(site_url)
-        query = st.text_input(
-            "Ask a question about the Cloudflare AI Gateway, Cloudflare Vectorize or Workers AI"
-        )
+        query = st.text_input("Ask a question about Langchain")
         if query:
             chain = (
                 {
